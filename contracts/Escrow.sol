@@ -9,7 +9,6 @@ interface IERC721 {
     ) external;
 }
 
-
 contract Escrow {
     address public nftAddress;
     address payable public seller;
@@ -17,7 +16,13 @@ contract Escrow {
     address public lender;
 
     string constant onlySellerErrorMsg = "Only seller can call this method";
-    
+    string constant onlyBuyerErrorMsg = "Only buyer can call this method";
+
+    modifier onlyBuyer(uint256 _nftID) {
+        require(msg.sender == buyer[_nftID], onlyBuyerErrorMsg);
+        _;
+    }
+
     modifier onlySeller() {
         require(msg.sender == seller, onlySellerErrorMsg);
         _;
@@ -53,5 +58,15 @@ contract Escrow {
         buyer[_nftID] = _buyer;
         purchasePrice[_nftID] = _purchasePrice;
         escrowAmount[_nftID] = _escrowAmount;
+    }
+
+    function depositEarnest(uint256 _nftID) public payable onlyBuyer(_nftID) {
+        require(msg.value >= escrowAmount[_nftID]);
+    }
+
+    receive() external payable {}
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 }
