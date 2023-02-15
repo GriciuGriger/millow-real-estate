@@ -9,11 +9,24 @@ interface IERC721 {
     ) external;
 }
 
+
 contract Escrow {
     address public nftAddress;
     address payable public seller;
     address public inspector;
     address public lender;
+
+    string constant onlySellerErrorMsg = "Only seller can call this method";
+    
+    modifier onlySeller() {
+        require(msg.sender == seller, onlySellerErrorMsg);
+        _;
+    }
+
+    mapping(uint256 => bool) public isListed;
+    mapping(uint256 => uint256) public purchasePrice;
+    mapping(uint256 => uint256) public escrowAmount;
+    mapping(uint256 => address) public buyer;
 
     constructor (
         address _nftAddress, 
@@ -25,5 +38,20 @@ contract Escrow {
         seller = _seller;
         inspector = _inspector;
         lender = _lender;
+    }
+
+    function list(
+        uint256 _nftID, 
+        address _buyer, 
+        uint256 _purchasePrice, 
+        uint256 _escrowAmount
+        ) public payable onlySeller {
+        // Transfer NFT from seller to this contract
+        IERC721(nftAddress).transferFrom(msg.sender, address(this), _nftID);
+
+        isListed[_nftID] = true;
+        buyer[_nftID] = _buyer;
+        purchasePrice[_nftID] = _purchasePrice;
+        escrowAmount[_nftID] = _escrowAmount;
     }
 }
